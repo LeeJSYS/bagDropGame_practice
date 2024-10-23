@@ -1,3 +1,5 @@
+import { GameResult } from "@/data/gameResults";
+
 const GameButton = ({
   gameStatus,
   startGame,
@@ -6,14 +8,16 @@ const GameButton = ({
   stopBag,
   showGameResultBoard,
   resetGame,
+  userResults,
 }: {
   gameStatus: string;
   startGame: () => void;
   countedTime: number;
   distance: number;
-  stopBag: () => void;
+  stopBag: (userResults: GameResult[], distance: number) => void;
   showGameResultBoard: () => void;
   resetGame: () => void;
+  userResults: GameResult[];
 }) => {
   return (
     <>
@@ -34,7 +38,7 @@ const GameButton = ({
         {gameStatus === "gameStart" &&
           (distance <= 400 ? (
             <button
-              onClick={stopBag}
+              onClick={() => stopBag(userResults, distance)}
               className="px-6 py-3 bg-red-500 rounded-full font-bold text-white text-center"
             >
               멈춰라!

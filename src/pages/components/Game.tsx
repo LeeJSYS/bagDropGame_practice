@@ -1,7 +1,8 @@
 import { gameResults, addGameResultData, GameResult } from "@/data/gameResults";
 import GameButton from "@/pages/components/GameButton";
-import { GameHeaderText } from "@/pages/components/GameHeaderText";
-import { GameResultBoard } from "@/pages/components/GameResultBoard";
+import GameHeaderText from "@/pages/components/GameHeaderText";
+import GameResultBoard from "@/pages/components/GameResultBoard";
+import Image from "next/image";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 const initialStates = {
@@ -22,7 +23,7 @@ const Game = () => {
 
   // 노란선의 위치
   const yellowLineBackgroundPosition = 85; // 배경의 85%에 노란선 위치
-  const yellowLinePosition = 0; // 0m인 지점에 노란선 위치
+  //   const yellowLinePosition = 0; // 0m인 지점에 노란선 위치
   const BACKGROUND_MOVING_SPEED =
     yellowLineBackgroundPosition / DEFAULT_PLAY_TIME;
 
@@ -38,9 +39,11 @@ const Game = () => {
   const [backgroundPosition, setBackgroundPosition] = useState<number>(
     initialStates.backgroundPosition
   );
+  /*
   const [isYellowLineVisible, setIsYellowLineVisible] = useState(
     initialStates.isYellowLineVisible
   );
+  */
   const [userResults, setUserResults] = useState<GameResult[]>(gameResults);
 
   const requestRef = useRef<number>(); // 매 프레임마다 애니메이션 업데이트
@@ -54,7 +57,7 @@ const Game = () => {
     setDistance(initialStates.distance);
     setBrightness(initialStates.brightness);
     setBackgroundPosition(initialStates.backgroundPosition);
-    setIsYellowLineVisible(initialStates.isYellowLineVisible);
+    // setIsYellowLineVisible(initialStates.isYellowLineVisible);
 
     // 애니메이션 프레임도 중지
     if (requestRef.current) {
@@ -102,17 +105,20 @@ const Game = () => {
   };
 
   // 낙하 중지 및 거리 계산
-  const stopBag = () => {
-    setGameStatus("gameFinished");
-    setUserResults([
-      ...userResults,
-      { id: "user-me", record: Number(distance.toFixed(3)) },
-    ]);
-    addGameResultData({
-      id: "user-me",
-      record: Number(distance.toFixed(3)),
-    });
-  };
+  const stopBag = useCallback(
+    (currentUserResults: GameResult[], currentDistance: number) => {
+      setGameStatus("gameFinished");
+      setUserResults([
+        ...currentUserResults,
+        { id: "user-me", record: Number(currentDistance.toFixed(3)) },
+      ]);
+      addGameResultData({
+        id: "user-me",
+        record: Number(currentDistance.toFixed(3)),
+      });
+    },
+    []
+  );
 
   const showGameResultBoard = () => {
     setGameStatus("showGameResultBoard");
@@ -143,34 +149,31 @@ const Game = () => {
       backgroundPosition >= yellowLineBackgroundPosition + 5 // 노란선이 상단 도달하는것 구현 미비
     ) {
       cancelAnimationFrame(requestRef.current!); // 애니메이션 중지
-      stopBag(); // 노란선이 화면 상단에 가면 자동으로 게임 멈춤
+      stopBag(userResults, distance); // 노란선이 화면 상단에 가면 자동으로 게임 멈춤
       return;
     }
-  }, [gameStatus, backgroundPosition]);
+  }, [gameStatus, backgroundPosition, userResults, distance, stopBag]);
 
-  const getTop3Results = useCallback(
-    (results: GameResult[]) => {
-      return results
-        .slice() // 원본 배열을 수정하지 않기 위해 복사본 생성
-        .sort((a, b) => a.record - b.record) // record를 숫자로 변환하여 오름차순 정렬
-        .slice(0, 3); // 상위 3개만 추출
-    },
-    [gameResults]
+  const getTop3Results = useCallback((results: GameResult[]) => {
+    return results
+      .slice() // 원본 배열을 수정하지 않기 위해 복사본 생성
+      .sort((a, b) => a.record - b.record) // record를 숫자로 변환하여 오름차순 정렬
+      .slice(0, 3); // 상위 3개만 추출
+  }, []);
+
+  const getMyBestRecord = useCallback((results: GameResult[]) => {
+    return results
+      .filter((elem) => elem.id === "user-me")
+      .sort((a, b) => a.record - b.record)[0];
+  }, []);
+
+  const top3Results = useMemo(
+    () => getTop3Results(userResults),
+    [getTop3Results, userResults]
   );
-
-  const getMyBestRecord = useCallback(
-    (results: GameResult[]) => {
-      return results
-        .filter((elem) => elem.id === "user-me")
-        .sort((a, b) => a.record - b.record)[0];
-    },
-    [gameResults]
-  );
-
-  const top3Results = useMemo(() => getTop3Results(userResults), [userResults]);
   const myBestRecord = useMemo(
     () => getMyBestRecord(userResults),
-    [userResults]
+    [getMyBestRecord, userResults]
   );
 
   return (
@@ -201,7 +204,7 @@ const Game = () => {
 
       {/* 구찌 가방 */}
       <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 w-24 h-24">
-        <img
+        <Image
           src="/gucci_bag.jpeg"
           alt="Gucci Bag"
           className="rounded-full border-4 border-white"
@@ -241,6 +244,7 @@ const Game = () => {
         stopBag={stopBag}
         showGameResultBoard={showGameResultBoard}
         resetGame={resetGame}
+        userResults={userResults}
       />
     </div>
   );

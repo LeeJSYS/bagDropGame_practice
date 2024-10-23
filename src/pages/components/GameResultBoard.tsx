@@ -1,6 +1,6 @@
 import { GameResult } from "@/data/gameResults";
 
-export const GameResultBoard = ({
+const GameResultBoard = ({
   gameStatus,
   top3Results,
   myBestRecord,
@@ -54,3 +54,5 @@ export const GameResultBoard = ({
     </>
   );
 };
+
+export default GameResultBoard;

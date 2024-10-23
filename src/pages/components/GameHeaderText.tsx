@@ -1,6 +1,6 @@
 import { GameResult } from "@/data/gameResults";
 
-export const GameHeaderText = ({
+const GameHeaderText = ({
   gameStatus,
   showFirstMessage,
   distance,
@@ -44,3 +44,5 @@ export const GameHeaderText = ({
     </>
   );
 };
+
+export default GameHeaderText;
