@@ -80,12 +80,6 @@ const Game = () => {
     });
   };
 
-  // 게임 시작 버튼 클릭 시 낙하 시작
-  const startFalling = () => {
-    fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
-    requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
-  };
-
   // useEffect로 카운트다운 관리
   useEffect(() => {
     if (
@@ -107,6 +101,12 @@ const Game = () => {
       startGame(); // 게임시작
     }
   }, [inGameState.gameStatus, inGameState.countedTime]);
+
+  // 게임 시작 버튼 클릭 시 낙하 시작
+  const startFalling = () => {
+    fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
+    requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
+  };
 
   // 배경 이동 함수
   const fall = (timestamp: number) => {
