@@ -3,7 +3,7 @@ import { GameStatus } from "@/pages/components/Game";
 
 const GameButton = ({
   gameStatus,
-  startGame,
+  startCountdown,
   countedTime,
   distance,
   stopBag,
@@ -11,7 +11,7 @@ const GameButton = ({
   resetGame,
 }: {
   gameStatus: GameStatus;
-  startGame: () => void;
+  startCountdown: () => void;
   countedTime: number;
   distance: number;
   stopBag: (distance: number) => void;
@@ -23,7 +23,7 @@ const GameButton = ({
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
         {gameStatus === GameStatus.BeforeGameStart && (
           <button
-            onClick={startGame}
+            onClick={startCountdown}
             className="px-6 py-3 bg-red-500 text-white font-bold rounded-full"
           >
             낙하 준비 중...

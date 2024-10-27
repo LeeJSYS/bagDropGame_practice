@@ -40,13 +40,13 @@ const Game = () => {
 
   // 노란선의 위치
   const yellowLineBackgroundPosition = 85; // 배경의 85%에 노란선 위치
-  //   const yellowLinePosition = 0; // 0m인 지점에 노란선 위치
   const BACKGROUND_MOVING_SPEED =
     yellowLineBackgroundPosition / DEFAULT_PLAY_TIME;
 
+  // 게임 내 사용 상태
   const [inGameState, setInGameState] = useState<InGameState>(initialStates);
+  // 유저 게임 결과
   const [userResults, setUserResults] = useState<GameResult[]>(gameResults);
-
   const requestRef = useRef<number>(); // 매 프레임마다 애니메이션 업데이트
   const fallStartTimeRef = useRef<number | null>(null); // 애니메이션 시작 시점부터 경과시간 기록
 
@@ -64,29 +64,44 @@ const Game = () => {
     fallStartTimeRef.current = null; // ref 값 초기화
   };
 
-  // 게임 시작 버튼 클릭 시 카운트다운 시작
-  const startGame = () => {
+  // 카운트다운을 시작하는 함수
+  const startCountdown = () => {
     changeInGameState({
       gameStatus: GameStatus.CountDown,
       countedTime: 3,
-    });
-
-    const countdownInterval = setInterval(() => {
-      setInGameState((prev) => {
-        const newCountedTime = prev.countedTime - 1;
-        if (newCountedTime === 0) {
-          // 카운트다운이 0이 되었을 때 종료
-          clearInterval(countdownInterval);
-          changeInGameState({
-            gameStatus: GameStatus.GameStart,
-            brightness: 100,
-          });
-          startFalling();
-        }
-        return { ...prev, countedTime: newCountedTime };
-      });
-    }, 1000);
+    }); // 카운트다운 초기화
   };
+
+  // 게임이 시작될 때 설정하는 함수
+  const startFallingGame = () => {
+    changeInGameState({
+      gameStatus: GameStatus.GameStart,
+      brightness: 100,
+    });
+    startFalling(); // 낙하 애니메이션 시작
+  };
+
+  // useEffect로 카운트다운 관리
+  useEffect(() => {
+    if (
+      inGameState.countedTime > 0 &&
+      inGameState.gameStatus === GameStatus.CountDown
+    ) {
+      const timeout = setTimeout(() => {
+        setInGameState((prev) => ({
+          ...prev,
+          countedTime: prev.countedTime - 1,
+        }));
+      }, 1000);
+
+      return () => clearTimeout(timeout); // cleanup 함수
+    } else if (
+      inGameState.countedTime === 0 &&
+      inGameState.gameStatus === GameStatus.CountDown
+    ) {
+      startFallingGame(); // 종료 로직 호출
+    }
+  }, [inGameState.gameStatus, inGameState.countedTime]);
 
   // 게임 시작 버튼 클릭 시 낙하 시작
   const startFalling = () => {
@@ -241,7 +256,7 @@ const Game = () => {
 
       <GameButton
         gameStatus={inGameState.gameStatus}
-        startGame={startGame}
+        startCountdown={startCountdown}
         countedTime={inGameState.countedTime}
         distance={inGameState.distance}
         stopBag={stopBag}
