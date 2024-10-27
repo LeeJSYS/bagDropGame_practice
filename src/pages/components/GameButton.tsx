@@ -1,4 +1,5 @@
 import { GameResult } from "@/data/gameResults";
+import { GameStatus } from "@/pages/components/Game";
 
 const GameButton = ({
   gameStatus,
@@ -10,7 +11,7 @@ const GameButton = ({
   resetGame,
   userResults,
 }: {
-  gameStatus: string;
+  gameStatus: GameStatus;
   startGame: () => void;
   countedTime: number;
   distance: number;
@@ -22,7 +23,7 @@ const GameButton = ({
   return (
     <>
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
-        {gameStatus === "beforeGameStart" && (
+        {gameStatus === GameStatus.BeforeGameStart && (
           <button
             onClick={startGame}
             className="px-6 py-3 bg-red-500 text-white font-bold rounded-full"
@@ -30,12 +31,12 @@ const GameButton = ({
             낙하 준비 중...
           </button>
         )}
-        {gameStatus === "countDown" && (
+        {gameStatus === GameStatus.CountDown && (
           <button className="px-6 py-3 font-bold rounded-full bg-gray-500 text-white text-center">
             {countedTime}초 뒤 낙하
           </button>
         )}
-        {gameStatus === "gameStart" &&
+        {gameStatus === GameStatus.GameStart &&
           (distance <= 400 ? (
             <button
               onClick={() => stopBag(userResults, distance)}
@@ -48,12 +49,12 @@ const GameButton = ({
               떨어지는중...
             </button>
           ))}
-        {gameStatus === "gameFinished" && (
+        {gameStatus === GameStatus.GameFinished && (
           <button className="px-6 py-3 font-bold rounded-full bg-gray-500 text-white text-center">
             멈췄다!
           </button>
         )}
-        {gameStatus === "showGameFinishedMessage" && (
+        {gameStatus === GameStatus.ShowGameFinishedMessage && (
           <button
             onClick={showGameResultBoard}
             className="px-6 py-3 font-bold rounded-full bg-purple-600 text-white text-center"
@@ -61,7 +62,7 @@ const GameButton = ({
             내 당첨 결과 확인하기
           </button>
         )}
-        {gameStatus === "showGameResultBoard" && (
+        {gameStatus === GameStatus.ShowGameResultBoard && (
           <button
             onClick={resetGame}
             className="px-6 py-3 font-bold rounded-full bg-purple-600 text-white text-center"

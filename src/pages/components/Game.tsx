@@ -5,14 +5,31 @@ import GameResultBoard from "@/pages/components/GameResultBoard";
 import Image from "next/image";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
+export enum GameStatus {
+  BeforeGameStart = "beforeGameStart",
+  CountDown = "countDown",
+  GameStart = "gameStart",
+  GameFinished = "gameFinished",
+  ShowGameFinishedMessage = "showGameFinishedMessage",
+  ShowGameResultBoard = "showGameResultBoard",
+}
+
+type InGameState = {
+  showFirstMessage: boolean;
+  gameStatus: GameStatus;
+  countedTime: number;
+  distance: number;
+  brightness: number;
+  backgroundPosition: number;
+};
+
 const initialStates = {
   showFirstMessage: false,
-  gameStatus: "beforeGameStart",
+  gameStatus: GameStatus.BeforeGameStart,
   countedTime: 3,
   distance: 1500, // 초기 높이
   brightness: 30,
   backgroundPosition: 0,
-  isYellowLineVisible: false,
 };
 
 const Game = () => {
@@ -27,56 +44,46 @@ const Game = () => {
   const BACKGROUND_MOVING_SPEED =
     yellowLineBackgroundPosition / DEFAULT_PLAY_TIME;
 
-  const [showFirstMessage, setShowFirstMessage] = useState(
-    initialStates.showFirstMessage
-  );
-  const [gameStatus, setGameStatus] = useState<string>(
-    initialStates.gameStatus
-  );
-  const [countedTime, setCountedTime] = useState(initialStates.countedTime);
-  const [distance, setDistance] = useState(initialStates.distance); // 초기 높이 1500m
-  const [brightness, setBrightness] = useState(initialStates.brightness); // 기본 밝기
-  const [backgroundPosition, setBackgroundPosition] = useState<number>(
-    initialStates.backgroundPosition
-  );
-  /*
-  const [isYellowLineVisible, setIsYellowLineVisible] = useState(
-    initialStates.isYellowLineVisible
-  );
-  */
+  const [inGameState, setInGameState] = useState<InGameState>(initialStates);
   const [userResults, setUserResults] = useState<GameResult[]>(gameResults);
 
   const requestRef = useRef<number>(); // 매 프레임마다 애니메이션 업데이트
   const fallStartTimeRef = useRef<number | null>(null); // 애니메이션 시작 시점부터 경과시간 기록
 
+  // 게임 상태를 변화시키는 함수
+  const changeInGameState = (newState: Partial<InGameState>) => {
+    setInGameState((prev) => ({
+      ...prev,
+      ...newState,
+    }));
+  };
+
   // 게임 상태를 초기화하는 resetGame 함수
   const resetGame = () => {
-    setShowFirstMessage(initialStates.showFirstMessage);
-    setGameStatus(initialStates.gameStatus);
-    setCountedTime(initialStates.countedTime);
-    setDistance(initialStates.distance);
-    setBrightness(initialStates.brightness);
-    setBackgroundPosition(initialStates.backgroundPosition);
-    // setIsYellowLineVisible(initialStates.isYellowLineVisible);
-
-    fallStartTimeRef.current = null;
+    setInGameState(initialStates); // 초기 상태로 전체 초기화
+    fallStartTimeRef.current = null; // ref 값 초기화
   };
 
   // 게임 시작 버튼 클릭 시 카운트다운 시작
   const startGame = () => {
-    setGameStatus("countDown");
-    setCountedTime(3); // 카운트다운을 3으로 초기화
+    changeInGameState({
+      gameStatus: GameStatus.CountDown,
+      countedTime: 3,
+    });
 
     const countdownInterval = setInterval(() => {
-      setCountedTime((prev) => {
-        if (prev === 1) {
+      setInGameState((prev) => {
+        const newCountedTime = prev.countedTime - 1;
+        if (newCountedTime === 0) {
+          // 카운트다운이 0이 되었을 때 종료
           clearInterval(countdownInterval);
-          setGameStatus("gameStart");
-          startFalling(); // 카운트다운이 끝나면 가방이 떨어짐
-          setBrightness(100);
-          return 0;
+          changeInGameState({
+            gameStatus: GameStatus.GameStart,
+            brightness: 100,
+          });
+          startFalling();
         }
-        return prev - 1;
+        return { ...prev, countedTime: newCountedTime };
       });
     }, 1000);
   };
@@ -95,15 +102,19 @@ const Game = () => {
     const newBackgroundPosition =
       INITIAL_BACKGROUND_POSITION + elapsedTime * BACKGROUND_MOVING_SPEED; // 경과 시간에 따른 배경 위치 계산
     const newDistance = Math.abs(INITIAL_HEIGHT - elapsedTime * DROP_SPEED);
-    setBackgroundPosition(newBackgroundPosition); // 배경 위치 업데이트
-    setDistance(newDistance); // 거리 값 업데이트
+    changeInGameState({
+      backgroundPosition: newBackgroundPosition,
+      distance: newDistance,
+    });
     requestRef.current = requestAnimationFrame(fall); // 다음 프레임 요청
   };
 
   // 낙하 중지 및 거리 계산
   const stopBag = useCallback(
     (currentUserResults: GameResult[], currentDistance: number) => {
-      setGameStatus("gameFinished");
+      changeInGameState({
+        gameStatus: GameStatus.GameFinished,
+      });
       setUserResults([
         ...currentUserResults,
         { id: "user-me", record: Number(currentDistance.toFixed(3)) },
@@ -117,41 +128,50 @@ const Game = () => {
   );
 
   const showGameResultBoard = () => {
-    setGameStatus("showGameResultBoard");
+    changeInGameState({
+      gameStatus: GameStatus.ShowGameResultBoard,
+    });
   };
 
   // 2초마다 메시지 변경
   useEffect(() => {
     const messageInterval = setInterval(() => {
-      setShowFirstMessage((prev) => !prev);
+      changeInGameState({
+        showFirstMessage: !inGameState.showFirstMessage,
+      });
     }, 2000);
 
-    return () => clearInterval(messageInterval); // 컴포넌트 언마운트 시 클리어
+    return () => clearInterval(messageInterval);
   }, []);
 
+  // gameStatus가 GameFinished로 바뀌면 결과 메시지 표시
   useEffect(() => {
-    if (gameStatus === "gameFinished") {
+    if (inGameState.gameStatus === GameStatus.GameFinished) {
       const timer = setTimeout(() => {
-        setGameStatus("showGameFinishedMessage");
-        clearTimeout(timer);
+        changeInGameState({
+          gameStatus: GameStatus.ShowGameFinishedMessage,
+        });
       }, 1500);
+      return () => clearTimeout(timer);
     }
-  }, [gameStatus]);
+  }, [inGameState.gameStatus]);
 
+  // 애니메이션 중지
   useEffect(() => {
-    // 게임 중지
-    if (
-      backgroundPosition >=
-      yellowLineBackgroundPosition + 5 // 노란선이 상단 도달하는것 구현 미비
-    ) {
-      cancelAnimationFrame(requestRef.current!); // 애니메이션 중지
-      stopBag(userResults, distance); // 노란선이 화면 상단에 가면 자동으로 게임 멈춤
-      return;
+    if (inGameState.backgroundPosition >= yellowLineBackgroundPosition + 5) {
+      cancelAnimationFrame(requestRef.current!);
+      stopBag(userResults, inGameState.distance);
     }
-    if (gameStatus === "gameFinished") {
-      cancelAnimationFrame(requestRef.current!); // 애니메이션 중지
+    if (inGameState.gameStatus === GameStatus.GameFinished) {
+      cancelAnimationFrame(requestRef.current!);
     }
-  }, [gameStatus, backgroundPosition, userResults, distance, stopBag]);
+  }, [
+    inGameState.gameStatus,
+    inGameState.backgroundPosition,
+    userResults,
+    inGameState.distance,
+    stopBag,
+  ]);
 
   const getTop3Results = useCallback((results: GameResult[]) => {
     return results
@@ -177,31 +197,28 @@ const Game = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-blue-500">
-      {/* 배경 - 배경 이미지가 위로 이동하면서 슬라이드 */}
       <div
         className="absolute top-0 left-0 w-full h-full bg-cover bg-no-repeat transition-transform"
         style={{
-          backgroundImage: `url('/sky.png')`, // 하늘 이미지 적용
-          backgroundPosition: `0px ${backgroundPosition}%`, // 배경 이미지의 위치 조정
-          filter: `brightness(${brightness}%)`, // 하늘 밝기 조정
+          backgroundImage: `url('/sky.png')`,
+          backgroundPosition: `0px ${inGameState.backgroundPosition}%`,
+          filter: `brightness(${inGameState.brightness}%)`,
         }}
       ></div>
 
       <GameHeaderText
-        gameStatus={gameStatus}
-        showFirstMessage={showFirstMessage}
-        distance={distance}
+        gameStatus={inGameState.gameStatus}
+        showFirstMessage={inGameState.showFirstMessage}
+        distance={inGameState.distance}
         top3Results={top3Results}
       />
 
-      {/* 카운트다운 */}
-      {gameStatus === "countDown" && (
+      {inGameState.gameStatus === GameStatus.CountDown && (
         <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 text-white text-6xl">
-          {countedTime}
+          {inGameState.countedTime}
         </div>
       )}
 
-      {/* 구찌 가방 */}
       <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 w-24 h-24">
         <Image
           src="/gucci_bag.jpeg"
@@ -210,38 +227,25 @@ const Game = () => {
           height={96}
           className="rounded-full border-4 border-white"
         />
-        {/* 실시간 거리 표시 */}
-        {gameStatus === "gameStart" && (
+        {inGameState.gameStatus === GameStatus.GameStart && (
           <div className="absolute top-[-70px] left-1/2 transform -translate-x-1/2 bg-black text-white px-2 py-1 rounded-lg">
-            <span>{distance.toFixed(3)}m</span>
-            {/* 말풍선의 아래쪽 화살표 */}
+            <span>{inGameState.distance.toFixed(3)}m</span>
             <div className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 border-[10px] border-transparent border-t-black"></div>
           </div>
         )}
       </div>
 
-      {/* 노란선 */}
-      {/* {isYellowLineVisible && (
-        <div
-          className="absolute w-full h-2 bg-yellow-500"
-          style={{
-            bottom: `${(backgroundPosition / 100) * window.innerHeight}px`, // 노란선이 배경 위치에 맞춰 이동
-          }}
-        ></div>
-      )} */}
-
       <GameResultBoard
-        gameStatus={gameStatus}
+        gameStatus={inGameState.gameStatus}
         top3Results={top3Results}
         myBestRecord={myBestRecord}
       />
 
-      {/* 하단 버튼 */}
       <GameButton
-        gameStatus={gameStatus}
+        gameStatus={inGameState.gameStatus}
         startGame={startGame}
-        countedTime={countedTime}
-        distance={distance}
+        countedTime={inGameState.countedTime}
+        distance={inGameState.distance}
         stopBag={stopBag}
         showGameResultBoard={showGameResultBoard}
         resetGame={resetGame}

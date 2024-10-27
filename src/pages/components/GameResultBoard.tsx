@@ -1,18 +1,19 @@
 import { GameResult } from "@/data/gameResults";
+import { GameStatus } from "@/pages/components/Game";
 
 const GameResultBoard = ({
   gameStatus,
   top3Results,
   myBestRecord,
 }: {
-  gameStatus: string;
+  gameStatus: GameStatus;
   top3Results: GameResult[];
   myBestRecord: GameResult;
 }) => {
   return (
     <>
       {/* 게임결과보드 */}
-      {gameStatus === "showGameResultBoard" && (
+      {gameStatus === GameStatus.ShowGameResultBoard && (
         <div className="absolute inset-0 flex justify-center items-center">
           <div className="w-4/5 bg-white rounded-xl shadow-xl p-6 z-50">
             {/* 순위 차이 텍스트 */}
