@@ -34,17 +34,16 @@ const initialStates = {
   backgroundPosition: 0,
 };
 
+const INITIAL_HEIGHT = 1500;
+const DEFAULT_PLAY_TIME = 5;
+const DROP_SPEED = INITIAL_HEIGHT / DEFAULT_PLAY_TIME;
+const INITIAL_BACKGROUND_POSITION = 0;
+// 노란선의 위치
+const yellowLineBackgroundPosition = 85; // 배경의 85%에 노란선 위치
+const BACKGROUND_MOVING_SPEED =
+  yellowLineBackgroundPosition / DEFAULT_PLAY_TIME;
+
 const Game = () => {
-  const INITIAL_HEIGHT = 1500;
-  const DEFAULT_PLAY_TIME = 5;
-  const DROP_SPEED = INITIAL_HEIGHT / DEFAULT_PLAY_TIME;
-  const INITIAL_BACKGROUND_POSITION = 0;
-
-  // 노란선의 위치
-  const yellowLineBackgroundPosition = 85; // 배경의 85%에 노란선 위치
-  const BACKGROUND_MOVING_SPEED =
-    yellowLineBackgroundPosition / DEFAULT_PLAY_TIME;
-
   // 게임 내 사용 상태
   const [inGameState, setInGameState] = useState<InGameState>(initialStates);
   // 유저 게임 결과
@@ -74,14 +73,6 @@ const Game = () => {
     }); // 카운트다운 초기화
   };
 
-  // 게임이 시작될 때 설정하는 함수
-  const startGame = () => {
-    changeInGameState({
-      gameStatus: GameStatus.GameStart,
-      brightness: 100,
-    });
-  };
-
   // useEffect로 카운트다운 관리
   useEffect(() => {
     if (
@@ -100,18 +91,16 @@ const Game = () => {
       inGameState.countedTime === 0 &&
       inGameState.gameStatus === GameStatus.CountDown
     ) {
-      startGame(); // 게임시작
+      // 게임시작
+      changeInGameState({
+        gameStatus: GameStatus.GameStart,
+        brightness: 100,
+      });
     }
   }, [inGameState.gameStatus, inGameState.countedTime]);
 
-  // 게임 시작 버튼 클릭 시 낙하 시작
-  const startFalling = () => {
-    fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
-    requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
-  };
-
   // 배경 이동 함수
-  const fall = (timestamp: number) => {
+  const fall = useCallback((timestamp: number) => {
     if (!fallStartTimeRef.current) fallStartTimeRef.current = timestamp; // 첫 프레임 시작 시간 기록
 
     const elapsedTime = (timestamp - fallStartTimeRef.current) / 1000; // 경과 시간 (초)
@@ -123,7 +112,7 @@ const Game = () => {
       distance: newDistance,
     });
     requestRef.current = requestAnimationFrame(fall); // 다음 프레임 요청
-  };
+  }, []);
 
   // 낙하 중지 및 거리 계산
   const stopBag = useCallback((currentDistance: number) => {
@@ -176,7 +165,8 @@ const Game = () => {
         //별도 useEffect 사용
         break;
       case GameStatus.GameStart:
-        startFalling();
+        fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
+        requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
         break;
       case GameStatus.GameFinished:
         cancelAnimationFrame(requestRef.current!);
@@ -187,7 +177,7 @@ const Game = () => {
         }, 1500);
         return () => clearTimeout(timer);
     }
-  }, [inGameState.gameStatus]);
+  }, [inGameState.gameStatus, fall]);
 
   const getTop3Results = useCallback((results: GameResult[]) => {
     return results

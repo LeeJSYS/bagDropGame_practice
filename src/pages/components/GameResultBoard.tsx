@@ -1,5 +1,4 @@
 import { GameResult } from "@/data/gameResults";
-import { GameStatus } from "@/pages/components/Game";
 
 const GameResultBoard = ({
   top3Results,
