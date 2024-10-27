@@ -7,7 +7,9 @@ const GameButton = ({
   countedTime,
   distance,
   stopBag,
+  showGameFinishedMessage,
   showGameResultBoard,
+  toggleShowGameResultBoard,
   reStartGame,
 }: {
   gameStatus: GameStatus;
@@ -15,7 +17,9 @@ const GameButton = ({
   countedTime: number;
   distance: number;
   stopBag: (distance: number) => void;
-  showGameResultBoard: () => void;
+  showGameFinishedMessage: boolean;
+  showGameResultBoard: boolean;
+  toggleShowGameResultBoard: () => void;
   reStartGame: () => void;
 }) => {
   return (
@@ -47,20 +51,22 @@ const GameButton = ({
               떨어지는중...
             </button>
           ))}
-        {gameStatus === GameStatus.GameFinished && (
-          <button className="px-6 py-3 font-bold rounded-full bg-gray-500 text-white text-center">
-            멈췄다!
-          </button>
-        )}
-        {gameStatus === GameStatus.ShowGameFinishedMessage && (
+        {gameStatus === GameStatus.GameFinished &&
+          !showGameFinishedMessage &&
+          !showGameResultBoard && (
+            <button className="px-6 py-3 font-bold rounded-full bg-gray-500 text-white text-center">
+              멈췄다!
+            </button>
+          )}
+        {gameStatus === GameStatus.GameFinished && showGameFinishedMessage && (
           <button
-            onClick={showGameResultBoard}
+            onClick={toggleShowGameResultBoard}
             className="px-6 py-3 font-bold rounded-full bg-purple-600 text-white text-center"
           >
             내 당첨 결과 확인하기
           </button>
         )}
-        {gameStatus === GameStatus.ShowGameResultBoard && (
+        {gameStatus === GameStatus.GameFinished && showGameResultBoard && (
           <button
             onClick={reStartGame}
             className="px-6 py-3 font-bold rounded-full bg-purple-600 text-white text-center"

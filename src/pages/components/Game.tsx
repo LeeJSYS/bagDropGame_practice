@@ -10,13 +10,13 @@ export enum GameStatus {
   CountDown = "countDown",
   GameStart = "gameStart",
   GameFinished = "gameFinished",
-  ShowGameFinishedMessage = "showGameFinishedMessage",
-  ShowGameResultBoard = "showGameResultBoard",
 }
 
 type InGameState = {
-  showFirstMessage: boolean;
   gameStatus: GameStatus;
+  showFirstMessage: boolean;
+  showGameFinishedMessage: boolean;
+  showGameResultBoard: boolean;
   countedTime: number;
   distance: number;
   brightness: number;
@@ -24,8 +24,10 @@ type InGameState = {
 };
 
 const initialStates = {
-  showFirstMessage: false,
   gameStatus: GameStatus.BeforeGameStart,
+  showFirstMessage: false,
+  showGameFinishedMessage: false,
+  showGameResultBoard: false,
   countedTime: 3,
   distance: 1500, // 초기 높이
   brightness: 30,
@@ -139,9 +141,10 @@ const Game = () => {
     });
   }, []);
 
-  const showGameResultBoard = () => {
+  const toggleShowGameResultBoard = () => {
     changeInGameState({
-      gameStatus: GameStatus.ShowGameResultBoard,
+      showGameFinishedMessage: false,
+      showGameResultBoard: true,
     });
   };
   const reStartGame = () => {
@@ -179,14 +182,10 @@ const Game = () => {
         cancelAnimationFrame(requestRef.current!);
         const timer = setTimeout(() => {
           changeInGameState({
-            gameStatus: GameStatus.ShowGameFinishedMessage,
+            showGameFinishedMessage: true,
           });
         }, 1500);
         return () => clearTimeout(timer);
-      case GameStatus.ShowGameFinishedMessage:
-        break;
-      case GameStatus.ShowGameResultBoard:
-        break;
     }
   }, [inGameState.gameStatus]);
 
@@ -225,9 +224,11 @@ const Game = () => {
 
       <GameHeaderText
         gameStatus={inGameState.gameStatus}
-        showFirstMessage={inGameState.showFirstMessage}
         distance={inGameState.distance}
         top3Results={top3Results}
+        showFirstMessage={inGameState.showFirstMessage}
+        showGameFinishedMessage={inGameState.showGameFinishedMessage}
+        showGameResultBoard={inGameState.showGameResultBoard}
       />
 
       {inGameState.gameStatus === GameStatus.CountDown && (
@@ -253,9 +254,9 @@ const Game = () => {
       </div>
 
       <GameResultBoard
-        gameStatus={inGameState.gameStatus}
         top3Results={top3Results}
         myBestRecord={myBestRecord}
+        showGameResultBoard={inGameState.showGameResultBoard}
       />
 
       <GameButton
@@ -264,7 +265,9 @@ const Game = () => {
         countedTime={inGameState.countedTime}
         distance={inGameState.distance}
         stopBag={stopBag}
-        showGameResultBoard={showGameResultBoard}
+        showGameFinishedMessage={inGameState.showGameFinishedMessage}
+        showGameResultBoard={inGameState.showGameResultBoard}
+        toggleShowGameResultBoard={toggleShowGameResultBoard}
         reStartGame={reStartGame}
       />
     </div>
