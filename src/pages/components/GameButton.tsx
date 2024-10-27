@@ -8,7 +8,7 @@ const GameButton = ({
   distance,
   stopBag,
   showGameResultBoard,
-  resetGame,
+  reStartGame,
 }: {
   gameStatus: GameStatus;
   startCountdown: () => void;
@@ -16,7 +16,7 @@ const GameButton = ({
   distance: number;
   stopBag: (distance: number) => void;
   showGameResultBoard: () => void;
-  resetGame: () => void;
+  reStartGame: () => void;
 }) => {
   return (
     <>
@@ -62,7 +62,7 @@ const GameButton = ({
         )}
         {gameStatus === GameStatus.ShowGameResultBoard && (
           <button
-            onClick={resetGame}
+            onClick={reStartGame}
             className="px-6 py-3 font-bold rounded-full bg-purple-600 text-white text-center"
           >
             다시 도전하기

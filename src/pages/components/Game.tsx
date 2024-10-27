@@ -59,7 +59,7 @@ const Game = () => {
   };
 
   // 게임 상태를 초기화하는 resetGame 함수
-  const resetGame = () => {
+  const resetState = () => {
     setInGameState(initialStates); // 초기 상태로 전체 초기화
     fallStartTimeRef.current = null; // ref 값 초기화
   };
@@ -73,12 +73,17 @@ const Game = () => {
   };
 
   // 게임이 시작될 때 설정하는 함수
-  const startFallingGame = () => {
+  const startGame = () => {
     changeInGameState({
       gameStatus: GameStatus.GameStart,
       brightness: 100,
     });
-    startFalling(); // 낙하 애니메이션 시작
+  };
+
+  // 게임 시작 버튼 클릭 시 낙하 시작
+  const startFalling = () => {
+    fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
+    requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
   };
 
   // useEffect로 카운트다운 관리
@@ -99,15 +104,9 @@ const Game = () => {
       inGameState.countedTime === 0 &&
       inGameState.gameStatus === GameStatus.CountDown
     ) {
-      startFallingGame(); // 종료 로직 호출
+      startGame(); // 게임시작
     }
   }, [inGameState.gameStatus, inGameState.countedTime]);
-
-  // 게임 시작 버튼 클릭 시 낙하 시작
-  const startFalling = () => {
-    fallStartTimeRef.current = null; // 낙하 시작 시점을 초기화
-    requestRef.current = requestAnimationFrame(fall); // 애니메이션 프레임 시작
-  };
 
   // 배경 이동 함수
   const fall = (timestamp: number) => {
@@ -145,46 +144,51 @@ const Game = () => {
       gameStatus: GameStatus.ShowGameResultBoard,
     });
   };
+  const reStartGame = () => {
+    changeInGameState({
+      gameStatus: GameStatus.BeforeGameStart,
+    });
+  };
 
-  // 2초마다 메시지 변경
-  useEffect(() => {
-    const messageInterval = setInterval(() => {
-      changeInGameState({
-        showFirstMessage: !inGameState.showFirstMessage,
-      });
-    }, 2000);
-
-    return () => clearInterval(messageInterval);
-  }, []);
-
-  // gameStatus가 GameFinished로 바뀌면 결과 메시지 표시
-  useEffect(() => {
-    if (inGameState.gameStatus === GameStatus.GameFinished) {
-      const timer = setTimeout(() => {
-        changeInGameState({
-          gameStatus: GameStatus.ShowGameFinishedMessage,
-        });
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [inGameState.gameStatus]);
-
-  // 애니메이션 중지
+  // 사용자가 정지 하지 않는 경우: 일정 범위를 지나면 애니메이션 중지
   useEffect(() => {
     if (inGameState.backgroundPosition >= yellowLineBackgroundPosition + 5) {
-      cancelAnimationFrame(requestRef.current!);
       stopBag(inGameState.distance);
     }
-    if (inGameState.gameStatus === GameStatus.GameFinished) {
-      cancelAnimationFrame(requestRef.current!);
+  }, [inGameState.backgroundPosition, inGameState.distance, stopBag]);
+
+  useEffect(() => {
+    switch (inGameState.gameStatus) {
+      case GameStatus.BeforeGameStart:
+        resetState();
+        const messageInterval = setInterval(() => {
+          setInGameState((prev) => ({
+            ...prev,
+            showFirstMessage: !prev.showFirstMessage,
+          }));
+        }, 2000);
+
+        return () => clearInterval(messageInterval);
+      case GameStatus.CountDown:
+        //별도 useEffect 사용
+        break;
+      case GameStatus.GameStart:
+        startFalling();
+        break;
+      case GameStatus.GameFinished:
+        cancelAnimationFrame(requestRef.current!);
+        const timer = setTimeout(() => {
+          changeInGameState({
+            gameStatus: GameStatus.ShowGameFinishedMessage,
+          });
+        }, 1500);
+        return () => clearTimeout(timer);
+      case GameStatus.ShowGameFinishedMessage:
+        break;
+      case GameStatus.ShowGameResultBoard:
+        break;
     }
-  }, [
-    inGameState.gameStatus,
-    inGameState.backgroundPosition,
-    userResults,
-    inGameState.distance,
-    stopBag,
-  ]);
+  }, [inGameState.gameStatus]);
 
   const getTop3Results = useCallback((results: GameResult[]) => {
     return results
@@ -261,7 +265,7 @@ const Game = () => {
         distance={inGameState.distance}
         stopBag={stopBag}
         showGameResultBoard={showGameResultBoard}
-        resetGame={resetGame}
+        reStartGame={reStartGame}
       />
     </div>
   );
