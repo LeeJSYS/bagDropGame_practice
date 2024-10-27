@@ -59,10 +59,6 @@ const Game = () => {
     setBackgroundPosition(initialStates.backgroundPosition);
     // setIsYellowLineVisible(initialStates.isYellowLineVisible);
 
-    // 애니메이션 프레임도 중지
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current!);
-    }
     fallStartTimeRef.current = null;
   };
 
@@ -145,12 +141,15 @@ const Game = () => {
   useEffect(() => {
     // 게임 중지
     if (
-      gameStatus === "gameFinished" ||
-      backgroundPosition >= yellowLineBackgroundPosition + 5 // 노란선이 상단 도달하는것 구현 미비
+      backgroundPosition >=
+      yellowLineBackgroundPosition + 5 // 노란선이 상단 도달하는것 구현 미비
     ) {
       cancelAnimationFrame(requestRef.current!); // 애니메이션 중지
       stopBag(userResults, distance); // 노란선이 화면 상단에 가면 자동으로 게임 멈춤
       return;
+    }
+    if (gameStatus === "gameFinished") {
+      cancelAnimationFrame(requestRef.current!); // 애니메이션 중지
     }
   }, [gameStatus, backgroundPosition, userResults, distance, stopBag]);
 
@@ -207,6 +206,8 @@ const Game = () => {
         <Image
           src="/gucci_bag.jpeg"
           alt="Gucci Bag"
+          width={96}
+          height={96}
           className="rounded-full border-4 border-white"
         />
         {/* 실시간 거리 표시 */}

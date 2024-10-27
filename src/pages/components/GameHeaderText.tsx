@@ -35,8 +35,7 @@ const GameHeaderText = ({
         <div className="absolute top-10 left-1/2 transform -translate-x-1/2 text-white text-center text-xl font-bold">
           1위와 나는{" "}
           {Math.abs(
-            Number(distance.toFixed(3)) -
-              Number(top3Results[0].record.toFixed(3))
+            Math.round(distance * 1000 - top3Results[0].record * 1000) / 1000
           )}
           m 차이에요!
         </div>
