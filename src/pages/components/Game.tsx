@@ -110,22 +110,20 @@ const Game = () => {
   };
 
   // 낙하 중지 및 거리 계산
-  const stopBag = useCallback(
-    (currentUserResults: GameResult[], currentDistance: number) => {
-      changeInGameState({
-        gameStatus: GameStatus.GameFinished,
-      });
-      setUserResults([
-        ...currentUserResults,
-        { id: "user-me", record: Number(currentDistance.toFixed(3)) },
-      ]);
-      addGameResultData({
-        id: "user-me",
-        record: Number(currentDistance.toFixed(3)),
-      });
-    },
-    []
-  );
+  const stopBag = useCallback((currentDistance: number) => {
+    const newResult = {
+      id: "user-me",
+      record: Number(currentDistance.toFixed(3)),
+    };
+
+    const updatedGameResults = addGameResultData(newResult);
+    setUserResults(updatedGameResults);
+
+    // 게임 상태 변경
+    changeInGameState({
+      gameStatus: GameStatus.GameFinished,
+    });
+  }, []);
 
   const showGameResultBoard = () => {
     changeInGameState({
@@ -160,7 +158,7 @@ const Game = () => {
   useEffect(() => {
     if (inGameState.backgroundPosition >= yellowLineBackgroundPosition + 5) {
       cancelAnimationFrame(requestRef.current!);
-      stopBag(userResults, inGameState.distance);
+      stopBag(inGameState.distance);
     }
     if (inGameState.gameStatus === GameStatus.GameFinished) {
       cancelAnimationFrame(requestRef.current!);
@@ -249,7 +247,6 @@ const Game = () => {
         stopBag={stopBag}
         showGameResultBoard={showGameResultBoard}
         resetGame={resetGame}
-        userResults={userResults}
       />
     </div>
   );

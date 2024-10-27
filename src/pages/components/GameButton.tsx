@@ -9,16 +9,14 @@ const GameButton = ({
   stopBag,
   showGameResultBoard,
   resetGame,
-  userResults,
 }: {
   gameStatus: GameStatus;
   startGame: () => void;
   countedTime: number;
   distance: number;
-  stopBag: (userResults: GameResult[], distance: number) => void;
+  stopBag: (distance: number) => void;
   showGameResultBoard: () => void;
   resetGame: () => void;
-  userResults: GameResult[];
 }) => {
   return (
     <>
@@ -39,7 +37,7 @@ const GameButton = ({
         {gameStatus === GameStatus.GameStart &&
           (distance <= 400 ? (
             <button
-              onClick={() => stopBag(userResults, distance)}
+              onClick={() => stopBag(distance)}
               className="px-6 py-3 bg-red-500 rounded-full font-bold text-white text-center"
             >
               멈춰라!

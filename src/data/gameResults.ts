@@ -38,4 +38,5 @@ export const gameResults: GameResult[] = [
 
 export const addGameResultData = (newResult: GameResult) => {
   gameResults.push(newResult);
+  return [...gameResults]; // 변경된 gameResults를 반환
 };
